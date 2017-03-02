@@ -93,7 +93,8 @@
 		
 		function onSuccess(position) {
 			if(flag){
-				if(notificationFlag){					
+				if(notificationFlag){	
+					alert('devId:' + deviceId );			
 					document.getElementById('container-frame').src = 'https://app.roootsj.com/index.php?lat='+position.coords.latitude+'&lon='+position.coords.longitude+'&devType=Android&deviceId='+deviceId;
 				}
 				else{
