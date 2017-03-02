@@ -38,23 +38,123 @@
     -->
     <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: 'unsafe-inline' https://ssl.gstatic.com; style-src 'self' 'unsafe-inline'; media-src *" /> -->
 
-    <link rel="stylesheet" type="text/css" href="css/index.css" />
-    <title>Hello World</title>
+    <link rel="stylesheet" type="text/css" href="css/index.css" /> 
 </head>
 
+
 <body>
-    <div class="app">
-        <h1>PhoneGap</h1>
-        <div id="deviceready" class="blink">
-            <p class="event listening">Connecting to Device</p>
-            <p class="event received">Device is baal</p>
-        </div>
-    </div>
-    <script type="text/javascript" src="cordova.js"></script>
-    <script type="text/javascript" src="js/index.js"></script>
+	<div id="blanker"></div>
+	<div id="offline-screen"></div>
+	<div class="social-button-facebook button_inline" onclick="browse();"></div>
+	
+	<iframe src="loader.html"  name="container-frame" id="container-frame" onload="loaded();" seamless="seamless" width="100%" height="100%" style="border:none; position:absolute;"></iframe>
+       
+	<script type="text/javascript" src="cordova.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>   
     <script type="text/javascript">
-        app.initialize();
+		// Initialize local vars
+		var deviceId;
+		var flag = true;
+		var notificationFlag = true;
+		
+		document.getElementById('offline-screen').style.height = document.body.clientHeight+'px';
+		document.addEventListener("deviceready",onDeviceReady,false);
+	
+		function loaded(){
+			document.getElementById('blanker').style.display = 'none';
+		}
+		var receiveMessage = function receiveMessage(e){
+			switch (e.data) {
+				case 'setBlanker':
+					document.getElementById('blanker').style.display = 'block';
+					break;
+				case 'removeBlanker':
+					document.getElementById('blanker').style.display = 'none'; 
+					break;
+			}
+		};			
+
+		window.addEventListener("message", receiveMessage, false);
+
+		function getPosition() {
+			var options = {
+				enableHighAccuracy: true,
+				maximumAge: 3600000
+			}
+
+			var watchID = navigator.geolocation.getCurrentPosition(onSuccess, onError, options);
+		}
+		
+		function onSuccess(position) {
+			if(flag){
+				if(notificationFlag){					
+					document.getElementById('container-frame').src = 'https://app.roootsj.com/index.php?lat='+position.coords.latitude+'&lon='+position.coords.longitude+'&devType=Android&deviceId='+deviceId;
+				}
+				else{
+					document.getElementById('container-frame').src = 'https://app.roootsj.com/index.php?lat='+position.coords.latitude+'&lon='+position.coords.longitude;
+				}
+				flag = false;
+			}
+		}
+
+		function onError(error) {
+			if(flag){
+				if(notificationFlag){
+					document.getElementById('container-frame').src = 'https://app.roootsj.com/index.php?devType=Android&deviceId='+deviceId;
+				}
+				else{
+					document.getElementById('container-frame').src = 'https://app.roootsj.com';
+				}
+				flag = false;
+			}
+		}
+		
+
+		function onDeviceReady(){
+			alert('hi');
+			var push = PushNotification.init({ "android": {"senderID": "560922606646"},
+			"ios": {"alert": "true", "badge": "true", "sound": "true"}, "windows": {} } );
+
+			push.on('registration', function(data) {
+				deviceId = data.registrationId;
+				getPosition();				
+			}); 
+			
+			push.on('error', function(e) {
+				notificationFlag = false;
+				getPosition();
+			}); 
+
+			push.on('notification', function(data) {
+				navigator.notification.alert(
+                    data.message,         // message
+                    null,                 // callback
+                    data.title,           // title
+                    'Ok'                  // buttonName
+				);			
+			});
+			
+			// Blanker on change
+			document.addEventListener("online", doWhenOnline, false);
+			document.addEventListener("offline", doWhenOffline, false);
+			var networkState = navigator.connection.type;
+
+			if(networkState == Connection.NONE) {
+				doWhenOffline();
+			}
+			else{
+				doWhenOnline();
+			} 
+		}
+
+		function doWhenOnline(){
+			document.getElementById('offline-screen').style.display = 'none';
+		}
+		function doWhenOffline(){				
+			document.getElementById('offline-screen').style.display = 'block';
+		}
     </script>
+	
 </body>
 
 </html>
